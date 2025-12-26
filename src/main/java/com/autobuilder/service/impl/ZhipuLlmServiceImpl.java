@@ -30,7 +30,7 @@ public class ZhipuLlmServiceImpl implements LlmService {
         }
 
         try {
-            logger.info("开始使用智谱AI生成构建规划，模型: {}", config.getModel());
+            logger.info("Starting to use ZhipuAI to generate build plan, model: {}", config.getModel());
             
             // 初始化智谱AI客户端
             ZhipuAiClient client = ZhipuAiClient.builder().ofZHIPU()
@@ -82,11 +82,11 @@ public class ZhipuLlmServiceImpl implements LlmService {
                 throw new RuntimeException("智谱AI返回的内容为空字符串");
             }
             
-            logger.info("智谱AI构建规划生成完成，响应长度: {}", result.length());
+            logger.info("ZhipuAI build plan generation completed, response length: {}", result.length());
             return result;
             
         } catch (Exception e) {
-            logger.error("智谱AI生成构建规划失败，模型: {}, 错误详情: {}", config.getModel(), e.getMessage(), e);
+            logger.error("ZhipuAI build plan generation failed, model: {}, error details: {}", config.getModel(), e.getMessage(), e);
             
             // 根据异常类型提供更具体的错误信息
             String errorMessage;

@@ -74,7 +74,7 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     private String extractOrmXml(String aiResponse) {
-        logger.debug("开始提取ORM XML，响应长度: {}", aiResponse.length());
+        logger.debug("Extracting ORM XML from AI response, response length: {}", aiResponse.length());
         
         // 清理响应，移除可能的代码块标记
         String cleanedResponse = aiResponse.replaceAll("```xml\\s*", "").replaceAll("```\\s*$", "").trim();
@@ -92,8 +92,8 @@ public class ConfigServiceImpl implements ConfigService {
         }
         
         if (xmlStart == -1) {
-            logger.warn("AI响应中未找到有效的XML内容，响应内容: {}", cleanedResponse.substring(0, Math.min(200, cleanedResponse.length())));
-            throw new RuntimeException("AI响应中未找到有效的XML内容，请检查AI模型的响应格式");
+            logger.warn("AI response does not contain any XML content: {}", cleanedResponse.substring(0, Math.min(200, cleanedResponse.length())));
+            throw new RuntimeException("AI response does not contain any XML content, please check the response format of the AI model");
         }
         
         // 查找XML结束标签
@@ -109,18 +109,18 @@ public class ConfigServiceImpl implements ConfigService {
         }
         
         if (xmlEnd == -1 || xmlEnd <= xmlStart) {
-            logger.warn("无法提取完整的XML内容，起始位置: {}, 结束位置: {}", xmlStart, xmlEnd);
-            throw new RuntimeException("无法提取完整的XML内容");
+            logger.warn("AI response does not contain a complete XML content, start position: {}, end position: {}", xmlStart, xmlEnd);
+            throw new RuntimeException("AI response does not contain a complete XML content, please check the response format of the AI model");
         }
         
         String xmlContent = cleanedResponse.substring(xmlStart, xmlEnd + 6); // +6 to include "</orm>" or similar
-        logger.debug("成功提取XML内容，长度: {}", xmlContent.length());
+        logger.debug("Successfully extracted XML content, length: {}", xmlContent.length());
         
         return xmlContent;
     }
 
     private String extractEntityName(String aiResponse) {
-        logger.debug("开始提取实体名称");
+        logger.debug("Extracting entity name from AI response");
         
         // 使用正则表达式提取entity的name属性
         java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("entity\\s+name\\s*=\\s*\"([^\"]+)\"");
@@ -137,7 +137,7 @@ public class ConfigServiceImpl implements ConfigService {
     }
 
     private String extractTableName(String aiResponse) {
-        logger.debug("开始提取表名");
+        logger.debug("Extracting table name from AI response");
         
         // 使用正则表达式提取tableName属性
         java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("tableName\\s*=\\s*\"([^\"]+)\"");
@@ -145,11 +145,11 @@ public class ConfigServiceImpl implements ConfigService {
         
         if (matcher.find()) {
             String tableName = matcher.group(1);
-            logger.debug("成功提取表名: {}", tableName);
+            logger.debug("Successfully extracted table name: {}", tableName);
             return tableName;
         }
         
-        logger.warn("未能从AI响应中提取表名，使用默认值");
+        logger.warn("Failed to extract table name from AI response, using default value");
         return "entity_table";
     }
 }
