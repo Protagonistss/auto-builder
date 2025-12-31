@@ -74,6 +74,32 @@ class ChatResponse(BaseModel):
     created_at: datetime
 
 
+class MessageTaskStatus(str, Enum):
+    """消息任务状态枚举"""
+    PENDING = "pending"
+    PROCESSING = "processing"
+    SUCCESS = "success"
+    FAILED = "failed"
+
+
+class MessageTask(BaseModel):
+    """消息任务模型"""
+    task_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    conversation_id: str = Field(..., description="会话ID")
+    user_message_id: str = Field(..., description="用户消息ID")
+    status: MessageTaskStatus = Field(default=MessageTaskStatus.PENDING, description="任务状态")
+    error_message: Optional[str] = Field(None, description="错误信息（失败时）")
+    result_message: Optional[Message] = Field(None, description="AI 响应消息（成功时）")
+    created_at: datetime = Field(default_factory=datetime.utcnow, description="创建时间")
+    completed_at: Optional[datetime] = Field(None, description="完成时间")
+
+
+class MessageTaskSubmitResponse(BaseModel):
+    """消息任务提交响应"""
+    task_id: str
+    message: str = "消息已提交，正在处理"
+
+
 class FileUploadResponse(BaseModel):
     """文件上传响应"""
     file_id: str

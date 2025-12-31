@@ -24,6 +24,7 @@ class Settings(BaseSettings):
         "application/pdf",
         "image/jpeg",
         "image/png",
+        "application/octet-stream",  # Windows 常见文件类型
     ]
 
     # 对话配置

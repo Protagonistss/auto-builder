@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
+from fastapi import APIRouter, HTTPException, UploadFile, File, BackgroundTasks
 from typing import List
 
 from ..models.conversation import (
@@ -9,6 +9,8 @@ from ..models.conversation import (
     ConversationDetail,
     Conversation,
     FileUploadResponse,
+    MessageTask,
+    MessageTaskSubmitResponse,
 )
 from ..services.conversation_service import ConversationService
 
@@ -71,28 +73,54 @@ async def upload_file(
 
 @router.post(
     "/{conversation_id}/messages",
-    response_model=ChatResponse,
-    summary="发送消息",
-    description="发送消息并获取 AI 响应，支持关联文件"
+    response_model=MessageTaskSubmitResponse,
+    summary="发送消息（异步）",
+    description="发送消息，立即返回任务ID，后台异步处理"
 )
 async def send_message(
     conversation_id: str,
-    request: SendMessageRequest
+    request: SendMessageRequest,
+    background_tasks: BackgroundTasks
 ):
     """
-    发送消息到会话
+    发送消息到会话（异步处理）
 
     - **conversation_id**: 会话ID
     - **message**: 用户消息内容
     - **file_ids**: 关联的文件ID列表（可选）
+    - 返回任务ID，需要轮询获取结果
     """
-    response = await conversation_service.send_message(
+    task_id = conversation_service.submit_message_task(
         conversation_id=conversation_id,
         content=request.message,
-        file_ids=request.file_ids
+        file_ids=request.file_ids,
+        background_tasks=background_tasks
     )
 
-    return response
+    return MessageTaskSubmitResponse(task_id=task_id)
+
+
+@router.get(
+    "/tasks/{task_id}",
+    response_model=MessageTask,
+    summary="查询消息任务状态",
+    description="查询消息任务的处理状态和结果"
+)
+async def get_message_task(
+    task_id: str
+):
+    """
+    查询消息任务
+
+    - **task_id**: 任务ID
+    - 返回任务状态和结果
+    """
+    task = conversation_service.get_message_task(task_id)
+
+    if not task:
+        raise HTTPException(status_code=404, detail="任务不存在")
+
+    return task
 
 
 @router.get(
