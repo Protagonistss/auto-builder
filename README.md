@@ -1,412 +1,184 @@
 # Builder - AI 驱动的 ORM 实体生成器
 
-基于智谱 AI 的 ORM 实体代码生成服务，通过 AI 模型自动生成高质量的 ORM 代码。
+![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.128%2B-009688)
+![Pydantic](https://img.shields.io/badge/Pydantic-2.0%2B-e92063)
+![License](https://img.shields.io/badge/license-MIT-green)
 
-## 📋 项目简介
-
-Builder 是一个基于 AI 的 ORM 实体代码生成服务，通过智谱 AI 模型自动生成高质量的 ORM 代码。
-
-**技术栈：**
-- Python 3.11+
-- FastAPI 0.128+
-- 智谱 AI (GLM-4.7)
-- Uvicorn ASGI 服务器
-- uv 包管理器
+**Builder** 是一个基于 **FastAPI** 和 **智谱 AI (GLM-4.7)** 的智能代码生成服务。只需上传简单的 JSON 配置文件，即可自动分析实体关系，生成高质量的 ORM 实体类代码（如 MyBatis/Plus、Hibernate 等）。
 
 ---
 
-## 🔧 环境要求
+## 🚀 快速开始 (Quick Start)
 
-### 必需环境
-- **Python**: >= 3.11
-- **包管理器**: uv (推荐)
-- **操作系统**: Windows / Linux / macOS
+### 1. 环境准备
 
----
+确保你的系统已安装 **Python 3.11+**。本项目使用 [uv](https://github.com/astral-sh/uv) 进行极速包管理（推荐），也可以使用标准的 pip。
 
-## 📦 安装步骤
-
-### 1. 克隆项目
-
-```bash
-git clone git@github.com:Protagonistss/auto-backend.git
-cd auto-backend
-```
-
-### 2. 安装 uv（如果尚未安装）
-
+**安装 uv (推荐):**
 ```bash
 # Windows (PowerShell)
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
-# Linux/Mac
+# Linux / macOS
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### 3. 同步依赖
+### 2. 获取代码与安装依赖
 
 ```bash
+git clone git@github.com:Protagonistss/auto-backend.git
+cd auto-backend
+
+# 使用 uv 同步所有依赖
 uv sync
 ```
 
----
+### 3. 配置 API Key
 
-## ⚙️ 配置说明
-
-### 1. 创建环境配置文件
+复制环境变量模板并填入你的智谱 AI Key：
 
 ```bash
-# 复制环境变量模板
 cp .env.example .env
-
-# 编辑 .env 文件，填入你的 ZHIPU_API_KEY
-# Windows: notepad .env
-# Linux/Mac: vim .env
+# 编辑 .env 文件，修改 ZHIPU_API_KEY=你的Key
 ```
 
-### 2. 环境变量配置
+### 4. 启动服务
 
-```env
-# ===================
-# AI 配置（必填）
-# ===================
-ZHIPU_API_KEY=your_api_key_here  # 替换为你的智谱 API Key
-
-# ===================
-# AI 配置（可选）
-# ===================
-AI_MODEL=glm-4.7      # AI 模型版本
-AI_PROVIDER=zhipu     # AI 提供商
-
-# ===================
-# 服务配置（可选）
-# ===================
-PORT=8000            # 服务端口
-HOST=0.0.0.0         # 监听地址
+**方式一：通过 Python 模块启动（推荐）**
+利用 `main.py` 中的配置直接启动：
+```bash
+uv run python -m builder.main
 ```
 
-### 3. 获取智谱 API Key
+**方式二：通过 Uvicorn 命令行启动**
+```bash
+uv run uvicorn builder.main:app --reload
+```
 
-1. 访问 [智谱 AI 开放平台](https://open.bigmodel.cn/)
-2. 注册/登录账号
-3. 进入「API Keys」页面
-4. 创建新的 API Key 并复制到 `.env` 文件中
+服务启动后访问：
+- **Swagger UI (接口文档)**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **服务状态**: [http://localhost:8000/](http://localhost:8000/)
 
 ---
 
-## 🚀 启动方式
+## ⚙️ 配置说明 (Configuration)
 
-### 方式一：使用 uv（推荐）
+项目配置通过环境变量 (`.env`) 管理。
 
-#### Windows 系统
-
-```bash
-# 开发模式（带热重载）
-uv run -m uvicorn builder.main:app --reload
-```
-
-#### Linux / macOS 系统
-
-```bash
-# 开发模式（带热重载）
-uv run -m uvicorn builder.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### 方式二：生产模式
-
-```bash
-# 多进程部署（推荐用于生产环境）
-uv run -m uvicorn builder.main:app --host 0.0.0.0 --port 8000 --workers 4
-```
-
-**启动成功输出：**
-```
-INFO:     Started server process [12345]
-INFO:     Waiting for application startup.
-INFO:     🚀 Auto-Builder Python 启动
-INFO:     📦 AI Provider: zhipu
-INFO:     🧠 Model: glm-4.7
-INFO:     Application startup complete.
-INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
-```
+| 变量名 | 必填 | 默认值 | 说明 |
+| :--- | :---: | :--- | :--- |
+| `ZHIPU_API_KEY` | ✅ | - | 智谱 AI 开放平台申请的 API Key |
+| `AI_MODEL` | ❌ | `glm-4.7` | 使用的 AI 模型版本 |
+| `AI_PROVIDER` | ❌ | `zhipu` | AI 提供商标识 |
+| `PORT` | ❌ | `8000` | 服务监听端口 |
+| `HOST` | ❌ | `0.0.0.0` | 服务绑定地址 |
+| `MAX_FILE_SIZE` | ❌ | `10485760` | 上传文件大小限制 (Bytes, 默认 10MB) |
 
 ---
 
-## 📡 API 接口说明
+## 📖 使用指南 (Usage)
 
-### 基础接口
+### 1. 准备实体定义文件 (JSON)
 
-#### 1. 健康检查
-```http
-GET /health
-```
-**响应：**
-```json
-{
-  "status": "healthy"
-}
-```
+创建一个 JSON 文件（例如 `entity_config.json`），定义你需要生成的表结构：
 
-#### 2. 服务信息
-```http
-GET /
-```
-**响应：**
-```json
-{
-  "message": "Auto-Builder API is running",
-  "version": "2.0.0"
-}
-```
-
-### 核心接口
-
-#### 3. 上传配置文件
-```http
-POST /api/upload
-Content-Type: multipart/form-data
-```
-
-**请求参数：**
-- `file`: JSON 格式配置文件（必填）
-
-**响应：**
-```json
-{
-  "task_id": "550e8400-e29b-41d4-a716-446655440000"
-}
-```
-
-**示例（curl）：**
-```bash
-curl -X POST "http://localhost:8000/api/upload" \
-  -F "file=@config.json"
-```
-
-**示例（Python）：**
-```python
-import requests
-
-with open("config.json", "rb") as f:
-    response = requests.post(
-        "http://localhost:8000/api/upload",
-        files={"file": f}
-    )
-    task_id = response.json()["task_id"]
-```
-
-#### 4. 查询任务状态
-```http
-GET /api/tasks/{task_id}
-```
-
-**响应示例：**
-```json
-{
-  "task_id": "550e8400-e29b-41d4-a716-446655440000",
-  "status": "processing",
-  "created_at": "2025-12-30T23:14:00"
-}
-```
-
-**状态枚举：**
-- `pending`: 等待处理
-- `processing`: 处理中
-- `success`: 成功
-- `failed`: 失败
-
-#### 5. 获取生成结果
-```http
-GET /api/tasks/{task_id}/result
-```
-
-**成功响应：**
-```json
-{
-  "entity_code": "// 生成的 ORM 代码...",
-  "metadata": {
-    "language": "java",
-    "framework": "mybatis"
-  }
-}
-```
-
----
-
-## 🧪 测试接口
-
-### 使用 Swagger UI（推荐）
-
-启动服务后，可以通过以下地址访问交互式 API 文档：
-
-| 文档类型 | 地址 | 说明 |
-|---------|------|------|
-| **Swagger UI** | http://localhost:8000/docs | 交互式 API 文档，支持在线测试 |
-| **ReDoc** | http://localhost:8000/redoc | 另一种风格的 API 文档 |
-| **OpenAPI Schema** | http://localhost:8000/openapi.json | OpenAPI 3.0 JSON 规范 |
-
-在 Swagger UI 中可以：
-- 查看所有 API 接口和详细说明
-- 在线测试接口（无需额外工具）
-- 查看请求/响应示例和数据模型
-- 下载 OpenAPI 规范文件
-
-### 使用示例配置
-
-创建测试配置文件 `test_config.json`：
 ```json
 {
   "database": "mysql",
+  "orm_type": "mybatis-plus",
   "tables": [
     {
-      "name": "user",
+      "name": "sys_user",
+      "comment": "系统用户表",
+      "columns": [
+        {"name": "id", "type": "bigint", "primary": true, "auto_increment": true, "comment": "主键ID"},
+        {"name": "username", "type": "varchar", "length": 50, "not_null": true, "comment": "用户名"},
+        {"name": "password", "type": "varchar", "length": 100, "comment": "加密密码"},
+        {"name": "email", "type": "varchar", "length": 100, "comment": "邮箱"},
+        {"name": "created_at", "type": "datetime", "comment": "创建时间"}
+      ]
+    },
+    {
+      "name": "sys_role",
+      "comment": "角色表",
       "columns": [
         {"name": "id", "type": "bigint", "primary": true},
-        {"name": "username", "type": "varchar", "length": 50},
-        {"name": "email", "type": "varchar", "length": 100}
+        {"name": "code", "type": "varchar", "length": 50, "comment": "角色编码"},
+        {"name": "name", "type": "varchar", "length": 50, "comment": "角色名称"}
       ]
     }
   ]
 }
 ```
 
----
+### 2. 调用生成接口
 
-## 🛠️ 常用 uv 命令
+使用 API 上传该文件以生成代码：
 
-### 依赖管理
+**接口地址**: `POST /api/upload`
 
+**Curl 示例**:
 ```bash
-# 同步依赖（安装所有依赖）
-uv sync
-
-# 添加新依赖
-uv add requests
-
-# 添加开发依赖
-uv add --dev pytest
-
-# 移除依赖
-uv remove requests
-
-# 更新所有依赖
-uv lock --upgrade
+curl -X POST "http://localhost:8000/api/upload" \
+  -F "file=@entity_config.json"
 ```
 
-### 运行命令
-
-```bash
-# 运行 Python 模块
-uv run python -m builder.main
-
-# 运行测试
-uv run pytest
-
-# 代码格式化
-uv run ruff format .
-
-# 类型检查
-uv run mypy builder/
+**响应示例**:
+```json
+{
+  "task_id": "550e8400-e29b-41d4-a716-446655440000",
+  "message": "File uploaded successfully, processing started."
+}
 ```
+
+### 3. 获取结果
+
+*(注：根据具体实现，可以是同步返回或异步轮询，请参考 Swagger 文档中的具体定义)*
 
 ---
 
-## 🔍 常见问题
+## 🛠️ 开发常用命令
 
-### Q1: 启动时报错 `KeyError: zhipu_api_key`
-**解决方案：** 确保已创建 `.env` 文件并正确配置 `ZHIPU_API_KEY`
+本项目使用 `uv` 管理开发流程：
 
-### Q2: 端口被占用
-**解决方案：**
-```bash
-# 修改 .env 中的 PORT 配置
-# 或使用命令行参数指定端口
-uv run uvicorn builder.main:app --port 8001
-```
-
-### Q3: 依赖安装失败
-**解决方案：**
-```bash
-# 清除缓存重新安装
-uv cache clean
-uv sync
-```
-
-### Q4: uv 命令不存在
-**解决方案：** 安装 uv
-```bash
-# Windows (PowerShell)
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-
-# Linux/Mac
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
+- **添加依赖**: `uv add <package_name>`
+- **运行测试**: `uv run pytest`
+- **代码格式化**: `uv run ruff format .`
+- **类型检查**: `uv run mypy builder/`
+- **构建 Docker 镜像**:
+  ```bash
+  docker build -t auto-builder .
+  ```
 
 ---
 
 ## 📂 项目结构
 
-```
+```text
 auto-backend/
-├── builder/              # 主项目目录
-│   ├── api/             # API 路由层
-│   │   ├── __init__.py
-│   │   └── upload.py    # 文件上传接口
-│   ├── services/        # 业务逻辑层
-│   │   ├── ai_service.py   # AI 服务
-│   │   ├── parser.py       # 配置解析
-│   │   └── task_service.py # 任务管理
-│   ├── models/          # 数据模型
-│   │   └── task.py
-│   ├── storage/         # 数据存储
-│   │   └── task_store.py
-│   ├── prompts/         # AI 提示词
-│   │   └── orm.md
-│   ├── config.py        # 配置管理
-│   └── main.py          # 应用入口
-├── .env.example         # 环境变量模板
-├── pyproject.toml       # 项目配置
-├── uv.lock              # 依赖锁定文件
-├── README.md            # 项目说明（本文件）
-└── .python-version      # Python 版本
+├── builder/                # 核心源码目录
+│   ├── api/                # API 路由控制层
+│   ├── models/             # Pydantic 数据模型
+│   ├── services/           # 核心业务逻辑 (AI交互, 解析等)
+│   ├── storage/            # 任务/文件存储层
+│   ├── prompts/            # AI 提示词模版
+│   ├── config.py           # 全局配置类
+│   └── main.py             # 程序入口
+├── tests/                  # 测试用例
+├── uploads/                # 上传文件临时存储
+├── .env.example            # 环境变量示例
+├── pyproject.toml          # 项目与依赖配置
+└── README.md               # 项目文档
 ```
 
-## 项目特点
+## 🤝 贡献与支持
 
-- ⚡ 基于 FastAPI 的高性能异步 API
-- 🤖 集成智谱 AI (GLM-4.7) 模型
-- 📦 使用 uv 进行极速依赖管理
-- 🔒 支持异步任务处理
-- 📝 自动生成 Swagger/OpenAPI 3.0 文档
-- 🎯 简单易用的 RESTful API 设计
-- 📖 完整的 API 文档和在线测试界面
-
-## 开发指南
-
-### 代码格式化
-```bash
-uv run ruff format .
-```
-
-### 类型检查
-```bash
-uv run mypy builder/
-```
-
-### 运行测试
-```bash
-uv run pytest
-```
-
-## 📞 联系与支持
-
-- **GitHub**: https://github.com/Protagonistss/auto-backend
-- **Issue**: 提交问题请使用 GitHub Issues
+- 欢迎提交 Issue 和 Pull Request。
+- 项目地址: [GitHub - Auto Backend](https://github.com/Protagonistss/auto-backend)
 
 ## License
 
-MIT
+MIT License
 
 ---
-
-**祝你使用愉快！** 🎉
