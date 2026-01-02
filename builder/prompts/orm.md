@@ -35,7 +35,9 @@
             </columns>
         </entity>
     </entities>
-</orm>## 三、核心生成规则
+</orm>
+
+## 三、核心生成规则
 
 ### 3.1 实体命名规范
 
@@ -188,33 +190,28 @@
 
 ### 输出 ORM XML：
 ```xml
-<orm x:schema="/nop/schema/orm/orm.xdef" xmlns:x="/nop/schema/xdsl.xdef"
-     xmlns:biz="biz" xmlns:orm="orm" xmlns:ext="ext">
-    <entities>
-        <entity name="app.mall.Product"
-                tableName="product"
-                displayName="商品"
-                biz:type="entity"
-                registerShortName="true">
-            <columns>
-                <column name="id" code="ID" propId="1" stdSqlType="VARCHAR"
-                        precision="36" primary="true" mandatory="true"
-                        displayName="ID"/>
-                <column name="productName" code="PRODUCT_NAME" propId="2"
-                        stdSqlType="VARCHAR" precision="200" mandatory="true"
-                        displayName="商品名称"/>
-                <column name="productQuantity" code="PRODUCT_QUANTITY" propId="3"
-                        stdSqlType="INTEGER" displayName="商品数量"/>
-                <column name="productSource" code="PRODUCT_SOURCE" propId="4"
-                        stdSqlType="VARCHAR" precision="50"
-                        ext:dict="product_source" displayName="商品来源"/>
-                <column name="productPrice" code="PRODUCT_PRICE" propId="5"
-                        stdSqlType="DECIMAL" precision="18" scale="2"
-                        displayName="商品价格"/>
-            </columns>
-        </entity>
-    </entities>
-</orm>
+    <entity name="app.mall.Product"
+            tableName="product"
+            displayName="商品"
+            biz:type="entity"
+            registerShortName="true">
+        <columns>
+            <column name="id" code="ID" propId="1" stdSqlType="VARCHAR"
+                    precision="36" primary="true" mandatory="true"
+                    displayName="ID"/>
+            <column name="productName" code="PRODUCT_NAME" propId="2"
+                    stdSqlType="VARCHAR" precision="200" mandatory="true"
+                    displayName="商品名称"/>
+            <column name="productQuantity" code="PRODUCT_QUANTITY" propId="3"
+                    stdSqlType="INTEGER" displayName="商品数量"/>
+            <column name="productSource" code="PRODUCT_SOURCE" propId="4"
+                    stdSqlType="VARCHAR" precision="50"
+                    ext:dict="product_source" displayName="商品来源"/>
+            <column name="productPrice" code="PRODUCT_PRICE" propId="5"
+                    stdSqlType="DECIMAL" precision="18" scale="2"
+                    displayName="商品价格"/>
+        </columns>
+    </entity>
 ```
 
 ## 六、约束条件
@@ -250,3 +247,4 @@
 3. 字段顺序：主键 → 业务字段（按输入顺序）
 4. 代码格式：缩进 4 个空格，属性换行对齐
 5. 注释：为复杂字段添加注释说明
+6. 只输出单个 <entity>...</entity> 片段，不要 XML 头、<orm>、<entities> 包裹
