@@ -39,11 +39,15 @@ class XmlFormatter:
 
         Args:
             tree: ElementTree 对象
-            strip_child_ns: 是否移除子元素的命名空间声明
+            strip_child_ns: 是否通过提升命名空间来移除子元素的冗余声明
 
         Returns:
             XML 字符串
         """
+        # 如果需要移除子元素命名空间，进行命名空间提升
+        if strip_child_ns:
+            tree = self._hoist_namespaces(tree)
+
         xml_content = etree.tostring(
             tree,
             encoding=self.encoding,
@@ -53,11 +57,49 @@ class XmlFormatter:
 
         xml_str = xml_content.decode(self.encoding)
 
-        # 移除子元素的命名空间声明
-        if strip_child_ns:
-            xml_str = self.ns_handler.strip_child_namespace_declarations(xml_str)
-
         return xml_str
+
+    def _hoist_namespaces(self, tree: etree._ElementTree) -> etree._ElementTree:
+        """
+        提升命名空间：将所有子节点使用的命名空间移动到根节点
+        这样 lxml 在序列化时就会自动移除子节点中冗余的 xmlns 声明
+
+        Args:
+            tree: 原始 ElementTree
+
+        Returns:
+            处理后的新 ElementTree
+        """
+        root = tree.getroot()
+
+        # 1. 收集全树所有的命名空间
+        all_ns = dict(root.nsmap)
+        for elem in root.iter():
+            for prefix, uri in elem.nsmap.items():
+                # 跳过默认命名空间（None）如果它会导致冲突，或者是 xml 命名空间
+                if prefix and prefix not in all_ns and prefix != 'xml':
+                    all_ns[prefix] = uri
+
+        # 如果根节点的 nsmap 已经包含了所有，且只需要简单的 cleanup
+        if all_ns == root.nsmap:
+            etree.cleanup_namespaces(root)
+            return tree
+
+        # 2. 创建一个新的根节点，带上全量的 nsmap
+        # 注意：使用 etree.Element 时，nsmap 参数一旦设置就不可变
+        new_root = etree.Element(root.tag, attrib=root.attrib, nsmap=all_ns)
+
+        # 3. 搬运内容
+        new_root.text = root.text
+        new_root.tail = root.tail
+        for child in root:
+            new_root.append(child)
+
+        # 4. 清理多余的命名空间声明
+        # 此时因为根节点有了定义，子节点的定义会被识别为冗余并移除
+        etree.cleanup_namespaces(new_root)
+
+        return etree.ElementTree(new_root)
 
     def write_tree(
         self,
@@ -73,66 +115,10 @@ class XmlFormatter:
             tree: ElementTree 对象
             file_path: 文件路径
             strip_child_ns: 是否移除子元素的命名空间声明
-            auto_add_namespaces: 是否自动添加命名空间声明（默认 True）
+            auto_add_namespaces: 是否自动添加命名空间声明（保留参数以兼容接口，实际由 _hoist_namespaces 处理）
         """
-        # 序列化树
+        # 序列化树 (serialize 内部已经处理了命名空间提升)
         xml_str = self.serialize(tree, strip_child_ns=strip_child_ns)
-
-        # 自动添加命名空间（默认启用，确保 XML 格式正确）
-        if auto_add_namespaces:
-            # 检测使用的命名空间
-            used_namespaces = NamespaceHandler.detect_used_namespaces(xml_str)
-
-            # 只添加 NOP 框架预定义的命名空间（i18n-en, ui 等）
-            nop_namespaces = {'i18n-en', 'ui', 'ext', 'biz'}
-            filtered_namespaces = used_namespaces & nop_namespaces
-
-            if filtered_namespaces:
-                # 查找根元素并添加缺失的命名空间声明
-                # 跳过 XML 声明
-                decl_end = xml_str.find('?>')
-                search_start = decl_end + 2 if decl_end != -1 else 0
-
-                # 找到根元素开始标签
-                root_start = xml_str.find('<', search_start)
-                if root_start != -1:
-                    root_end = xml_str.find('>', root_start)
-                    if root_end != -1:
-                        root_tag = xml_str[root_start:root_end + 1]
-
-                        # 添加缺失的命名空间声明
-                        modified = False
-                        new_namespaces = []
-                        for prefix in sorted(filtered_namespaces):  # 排序确保稳定顺序
-                            ns_decl = f'xmlns:{prefix}="{prefix}"'
-                            if ns_decl not in root_tag and f'xmlns:{prefix}=' not in root_tag:
-                                new_namespaces.append(ns_decl)
-                                modified = True
-
-                        if modified:
-                            # 重新构建根元素标签
-                            tag_name_start = root_tag.find('<') + 1
-                            tag_name_end = root_tag.find(' ')
-                            if tag_name_end == -1:
-                                tag_name_end = root_tag.find('>')
-                            tag_name = root_tag[tag_name_start:tag_name_end]
-
-                            # 提取现有属性
-                            if tag_name_end != -1:
-                                attrs_part = root_tag[tag_name_end:-1]
-                            else:
-                                attrs_part = ''
-
-                            # 重新构建根元素标签
-                            if new_namespaces:
-                                all_ns = ' '.join(new_namespaces)
-                                if attrs_part and attrs_part.strip():
-                                    new_root_tag = f'<{tag_name} {all_ns} {attrs_part}>'
-                                else:
-                                    new_root_tag = f'<{tag_name} {all_ns}>'
-
-                                # 替换根元素标签
-                                xml_str = xml_str[:root_start] + new_root_tag + xml_str[root_end + 1:]
 
         with open(file_path, "wb") as f:
             f.write(xml_str.encode(self.encoding))
@@ -152,18 +138,22 @@ class XmlFormatter:
         Returns:
             XML 字符串
         """
+        # 为了复用 _hoist_namespaces 逻辑，我们需要临时把 element 包装成 tree
+        # 但如果不希望改变原 element 的结构（比如它没有 parent），我们得复制一份
+        if strip_child_ns:
+            # 深拷贝元素以避免修改原对象
+            element_copy =  etree.fromstring(etree.tostring(element))
+            tree = etree.ElementTree(element_copy)
+            tree = self._hoist_namespaces(tree)
+            element = tree.getroot()
+
         xml_content = etree.tostring(
             element,
             encoding=self.encoding,
             pretty_print=self.pretty_print
         )
 
-        xml_str = xml_content.decode(self.encoding)
-
-        if strip_child_ns:
-            xml_str = self.ns_handler.strip_child_namespace_declarations(xml_str)
-
-        return xml_str
+        return xml_content.decode(self.encoding)
 
     def prettify(self, xml: str) -> str:
         """
