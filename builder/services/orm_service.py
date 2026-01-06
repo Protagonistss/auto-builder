@@ -49,6 +49,36 @@ class OrmXmlService:
         if not self.xml_file_path.exists():
             raise FileNotFoundError(f"文件不存在: {self.xml_file_path}")
 
+        # 先读取文件内容，检查并修复命名空间声明
+        with open(self.xml_file_path, 'r', encoding='utf-8') as f:
+            file_content = f.read()
+
+        # 检查文件中使用的命名空间
+        used_namespaces = set()
+        for prefix in ['biz', 'ext', 'orm', 'i18n-en', 'ui']:
+            if f'{prefix}:' in file_content:
+                used_namespaces.add(prefix)
+
+        # 检查根元素 <orm> 是否已声明这些命名空间
+        root_start = file_content.find('<orm')
+        if root_start != -1:
+            root_end = file_content.find('>', root_start)
+            root_tag = file_content[root_start:root_end + 1]
+
+            # 添加缺失的命名空间声明
+            for prefix in used_namespaces:
+                ns_decl = f'xmlns:{prefix}="{prefix}"'
+                if ns_decl not in root_tag and f'xmlns:{prefix}=' not in root_tag:
+                    # 在 <orm 标签中插入命名空间声明
+                    root_tag = root_tag.replace('<orm', f'<orm {ns_decl}')
+
+            # 替换文件内容
+            file_content = file_content[:root_start] + root_tag + file_content[root_end + 1:]
+
+            # 重新写入修复后的文件
+            with open(self.xml_file_path, 'w', encoding='utf-8') as f:
+                f.write(file_content)
+
         parser = etree.XMLParser(remove_blank_text=False, remove_comments=False)
         tree = etree.parse(self.xml_file_path, parser)
         root = tree.getroot()
@@ -60,6 +90,11 @@ class OrmXmlService:
 
         # 4. 检查是否重复
         existing_entity = self._find_entity_by_name(root, entity_name)
+
+        # 移除 entity 上可能存在的命名空间声明（保持与 AI 输出一致）
+        for ns_attr in list(new_entity.attrib.keys()):
+            if ns_attr.startswith('xmlns:'):
+                del new_entity.attrib[ns_attr]
 
         if existing_entity is not None:
             # 替换
@@ -94,28 +129,37 @@ class OrmXmlService:
         # 清理代码块标记
         cleaned = xml.replace("```xml", "").replace("```", "").strip()
 
-        # 在 entity 开始标签中添加所有必要的命名空间声明
-        # 匹配 <entity 后跟任意字符（包括换行）
-        cleaned = re.sub(
-            r'<entity(\s+)',
-            r'<entity xmlns:biz="biz" xmlns:ext="ext" xmlns:orm="orm" xmlns:i18n-en="i18n-en" xmlns:ui="ui"\1',
-            cleaned,
-            count=1
-        )
+        # 检测实际使用的命名空间，临时包装以便解析
+        used_namespaces = []
+        if 'biz:' in cleaned:
+            used_namespaces.append('xmlns:biz="biz"')
+        if 'ext:' in cleaned:
+            used_namespaces.append('xmlns:ext="ext"')
+        if 'orm:' in cleaned:
+            used_namespaces.append('xmlns:orm="orm"')
+        if 'i18n-en:' in cleaned:
+            used_namespaces.append('xmlns:i18n-en="i18n-en"')
+        if 'ui:' in cleaned:
+            used_namespaces.append('xmlns:ui="ui"')
+
+        # 如果使用了命名空间前缀，临时包装以提供命名空间上下文
+        if used_namespaces:
+            ns_decls = ' '.join(used_namespaces)
+            wrapper = f'<root {ns_decls}>{cleaned}</root>'
+        else:
+            wrapper = f'<root>{cleaned}</root>'
 
         # 调试：打印处理后的 XML（前200字符）
         import logging
         logger = logging.getLogger(__name__)
-        logger.info(f"处理后的 XML: {cleaned[:200]}...")
+        logger.info(f"包装后的 XML: {wrapper[:300]}...")
 
         parser = etree.XMLParser(remove_blank_text=False)
 
         try:
-            # 直接解析
-            entity = etree.fromstring(cleaned.encode("utf-8"), parser)
-            if entity.tag != "entity":
-                # 如果根元素不是 entity，查找第一个 entity 子元素
-                entity = entity.find(".//entity")
+            # 解析包装后的 XML
+            root = etree.fromstring(wrapper.encode("utf-8"), parser)
+            entity = root.find(".//entity")
             if entity is None:
                 raise ValueError("未找到 entity 标签")
             return entity
@@ -145,18 +189,12 @@ class OrmXmlService:
 
     def _write_tree(self, tree: etree._ElementTree):
         """
-        写回文件，保持格式
+        写回文件
 
         Args:
             tree: lxml ElementTree 对象
         """
-        # 使用 indent 方法格式化 XML（lxml 4.9+）
-        try:
-            etree.indent(tree, space="  ")
-        except AttributeError:
-            # 如果 lxml 版本过低，跳过 indent
-            pass
-
+        # 序列化 XML
         xml_content = etree.tostring(
             tree,
             encoding="utf-8",
@@ -164,5 +202,21 @@ class OrmXmlService:
             xml_declaration=True
         )
 
+        # 解码为字符串
+        xml_str = xml_content.decode('utf-8')
+
+        # 移除所有子元素上的 xmlns:* 声明（保留根元素的）
+        import re
+
+        # 对于 <entity>, <column>, <comment> 等标签，移除其上的 xmlns:* 声明
+        def remove_ns_attrs(match):
+            tag_name = match.group(1)
+            attrs = match.group(2)
+            # 移除 xmlns:xxx="xxx" 格式的属性
+            cleaned_attrs = re.sub(r'\s+xmlns:[a-z0-9\-]+="[^"]*"', '', attrs)
+            return f'<{tag_name}{cleaned_attrs}>'
+
+        xml_str = re.sub(r'<(entity|column|comment)([^>]*)>', remove_ns_attrs, xml_str)
+
         with open(self.xml_file_path, "wb") as f:
-            f.write(xml_content)
+            f.write(xml_str.encode('utf-8'))

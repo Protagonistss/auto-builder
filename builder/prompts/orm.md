@@ -85,11 +85,7 @@
 3. **显示名（displayName 属性）**：
    - 直接使用 `title` 字段的值
    - 示例：`商品名称`、`商品数量`
-
-4. **i18n 支持（i18n-en:displayName 属性）**：
-   - 为每个字段添加英文显示名
-   - 将中文翻译为英文
-   - 示例：`商品名称` → `Product Name`
+   - **可选**：如果需要国际化支持，可以添加 `i18n-en:displayName`（英文显示名）
 
 ### 3.3 数据类型映射规则
 
@@ -256,36 +252,35 @@
         createTimeProp="addTime"
         updateTimeProp="updateTime"
         deleteFlagProp="deleted"
-        useLogicalDelete="true"
-        i18n-en:displayName="Product">
+        useLogicalDelete="true">
     <columns>
         <column name="id" code="ID" propId="1" stdSqlType="INTEGER"
                 stdDataType="int" tagSet="seq" ui:show="R"
                 primary="true" mandatory="true"
-                displayName="Id" i18n-en:displayName="Id"/>
+                displayName="Id"/>
         <column name="productName" code="PRODUCT_NAME" propId="2"
                 stdSqlType="VARCHAR" stdDataType="string" precision="255"
                 mandatory="true" tagSet="disp"
-                displayName="商品名称" i18n-en:displayName="Product Name"/>
+                displayName="商品名称"/>
         <column name="productQuantity" code="PRODUCT_QUANTITY" propId="3"
                 stdSqlType="INTEGER" stdDataType="int"
-                displayName="商品数量" i18n-en:displayName="Product Quantity"/>
+                displayName="商品数量"/>
         <column name="productSource" code="PRODUCT_SOURCE" propId="4"
                 stdSqlType="VARCHAR" stdDataType="string" precision="255"
                 ext:dict="product_source"
-                displayName="商品来源" i18n-en:displayName="Product Source"/>
+                displayName="商品来源"/>
         <column name="productPrice" code="PRODUCT_PRICE" propId="5"
                 stdSqlType="DECIMAL" stdDataType="decimal" precision="18" scale="2"
-                displayName="商品价格" i18n-en:displayName="Product Price"/>
+                displayName="商品价格"/>
         <column name="addTime" code="ADD_TIME" propId="6"
                 stdSqlType="DATETIME" stdDataType="datetime" domain="createTime"
-                displayName="创建时间" i18n-en:displayName="Create Time" ui:show="X"/>
+                displayName="创建时间" ui:show="X"/>
         <column name="updateTime" code="UPDATE_TIME" propId="7"
                 stdSqlType="DATETIME" stdDataType="datetime" domain="updateTime"
-                displayName="更新时间" i18n-en:displayName="Update Time" ui:show="X"/>
+                displayName="更新时间" ui:show="X"/>
         <column name="deleted" code="DELETED" propId="8"
                 stdSqlType="BOOLEAN" stdDataType="boolean" domain="delFlag"
-                displayName="逻辑删除" i18n-en:displayName="Deleted" ui:show="X"/>
+                displayName="逻辑删除" ui:show="X"/>
     </columns>
     <comment>商品信息</comment>
 </entity>
@@ -298,7 +293,6 @@
 3. **必填系统字段**：必须添加 `addTime`, `updateTime`, `deleted` 三个系统字段
 4. **字典规范**：状态和枚举字段使用 `VARCHAR(255)` + `ext:dict`
 5. **命名规范**：避免 SQL 关键字，使用下划线命名数据库列
-6. **i18n 要求**：所有字段必须添加 `i18n-en:displayName` 英文显示名
 
 ## 七、特殊处理
 
