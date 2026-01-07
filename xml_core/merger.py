@@ -9,7 +9,7 @@ from lxml import etree
 from .parser import XmlParser
 from .formatter import XmlFormatter
 from .exceptions import XmlMergeError, XmlFileNotFoundError
-from .config.settings import MergeOptions
+from .settings import MergeOptions
 
 
 logger = logging.getLogger(__name__)

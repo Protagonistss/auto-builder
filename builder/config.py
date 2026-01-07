@@ -1,4 +1,4 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 from typing import List, Dict, Optional
 from pydantic import BaseModel
@@ -42,17 +42,15 @@ class Settings(BaseSettings):
     max_context_messages: int = 20  # 保留的上下文消息数量
 
     # ORM 配置
-    orm_xml_path: str = r"C:\Users\ZOU\Code\KDesinger\labor-tracking-system\labor-tracking-dao\src\main\resources\_vfs\labor\tracking\orm\app.orm.xml"  # ORM 文件路径
+    orm_xml_path: str = "templates/app.orm.xml"  # ORM 文件路径，默认指向模板
     orm_default_package: str = "app.module"  # 默认包名前缀
     orm_table_prefix: str = ""  # 表名前缀（如 "lt_", "mall_"）
 
     # 构建配置
-    project_root: str = r"C:\Users\ZOU\Code\KDesinger\labor-tracking-system"  # 项目根目录
+    project_root: str = "."  # 项目根目录，默认为当前目录
     default_build_timeout: int = 300  # 默认构建超时时间（秒）
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 
 @lru_cache()
