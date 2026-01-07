@@ -2,12 +2,14 @@ import asyncio
 import sys
 import os
 from pathlib import Path
+import pytest
 
 # 添加当前目录到 sys.path 以便导入 builder
 sys.path.append(os.getcwd())
 
 from builder.services.shell_service import ShellService
 
+@pytest.mark.asyncio
 async def test_maven_build():
     shell = ShellService()
     target_dir = r"E:\code\KDesigner\time-tracking-system"
