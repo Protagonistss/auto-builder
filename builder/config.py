@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     orm_default_package: str = "app.module"  # 默认包名前缀
     orm_table_prefix: str = ""  # 表名前缀（如 "lt_", "mall_"）
 
+    # 构建配置
+    project_root: str = "."  # 项目根目录
+    default_build_timeout: int = 300  # 默认构建超时时间（秒）
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

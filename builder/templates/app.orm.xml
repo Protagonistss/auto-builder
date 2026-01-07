@@ -1,8 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
-<orm xmlns:ext="ext" xmlns:i18n-en="i18n-en" xmlns:ui="ui" xmlns:x="/nop/schema/xdsl.xdef" xmlns:xpl="/nop/schema/xpl.xdef" x:schema="/nop/schema/orm/orm.xdef" x:extends="_app.orm.xml">
+<orm xmlns:ext="ext" xmlns:i18n-en="i18n-en" xmlns:ui="ui" xmlns:x="/nop/schema/xdsl.xdef" x:schema="/nop/schema/orm/orm.xdef" x:extends="_app.orm.xml">
 
   <entities>
-  <entity className="labor.tracking.dao.entity.Product" name="labor.tracking.dao.entity.Product" tableName="lt_product" displayName="商品信息" registerShortName="true" createTimeProp="addTime" updateTimeProp="updateTime" deleteFlagProp="deleted" useLogicalDelete="true" i18n-en:displayName="Product Info">
+  <entity className="labor.tracking.dao.entity.Product" name="labor.tracking.dao.entity.Product" tableName="lt_product" displayName="商品" registerShortName="true" createTimeProp="addTime" updateTimeProp="updateTime" deleteFlagProp="deleted" useLogicalDelete="true" i18n-en:displayName="Product">
     <columns>
         <column name="id" code="ID" propId="1" stdSqlType="INTEGER" stdDataType="int" tagSet="seq" ui:show="R" primary="true" mandatory="true" displayName="Id" i18n-en:displayName="Id"/>
         <column name="productName" code="PRODUCT_NAME" propId="2" stdSqlType="VARCHAR" stdDataType="string" precision="255" mandatory="true" tagSet="disp" displayName="商品名称" i18n-en:displayName="Product Name"/>
